@@ -1,19 +1,19 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dec5e0bfe0b7c41ad53c457d5a86b281e3a5bb77b167d984cf535f929de2d6f1
+-- hash: ac2e89f4350ddae690ba7f5d91fc9d7d06438a261a731488f32e4ee40c073906
 
 name:           defx
-version:        0.0.0.0
+version:        0.0.2.0
 description:    Please see the README on GitHub at <https://github.com/telostat/defx#readme>
 homepage:       https://github.com/telostat/defx#readme
 bug-reports:    https://github.com/telostat/defx/issues
 author:         Vehbi Sinan Tunalioglu
 maintainer:     vst@vsthost.com
-copyright:      2020 Telostat Pte Ltd
+copyright:      2017-2021 Telostat Pte Ltd
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -77,7 +77,7 @@ test-suite defx-doctest
   other-modules:
       Paths_defx
   hs-source-dirs:
-      ./.
+      ./
   ghc-options: -threaded
   build-depends:
       aeson

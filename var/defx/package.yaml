@@ -1,10 +1,10 @@
 name:                defx
-version:             0.0.0.0
+version:             0.0.2.0
 github:              "telostat/defx"
 license:             BSD3
 author:              "Vehbi Sinan Tunalioglu"
 maintainer:          "vst@vsthost.com"
-copyright:           "2020 Telostat Pte Ltd"
+copyright:           "2017-2021 Telostat Pte Ltd"
 
 extra-source-files:
 - README.md
