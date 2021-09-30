@@ -20,6 +20,7 @@ dependencies:
 - http-conduit
 - http-types
 - mtl
+- safe-decimal
 - scientific
 - text
 - time

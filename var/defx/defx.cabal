@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c210b6e9bc2860bd092e3d6c5bd4edd72501d41ebbe36d342d3bd5519dfda66d
+-- hash: 556c8860f4aab1b3708a6f697034d4088d417b394ea732cce58e873f5f26419a
 
 name:           defx
 version:        0.0.2.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Defx.IO
+      Defx.Programs.ComputeCrosses
       Defx.Programs.HistoricalRates
       Defx.Providers.Oxr
       Defx.Types
@@ -51,6 +52,7 @@ library
     , http-conduit
     , http-types
     , mtl
+    , safe-decimal
     , scientific
     , text
     , time
@@ -74,6 +76,7 @@ executable defx-exe
     , http-types
     , mtl
     , optparse-applicative
+    , safe-decimal
     , scientific
     , text
     , time
@@ -98,6 +101,7 @@ test-suite defx-doctest
     , http-conduit
     , http-types
     , mtl
+    , safe-decimal
     , scientific
     , text
     , time
@@ -121,6 +125,7 @@ test-suite defx-test
     , http-conduit
     , http-types
     , mtl
+    , safe-decimal
     , scientific
     , text
     , time

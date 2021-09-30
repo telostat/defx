@@ -8,13 +8,13 @@ import Defx.Types             (Currency)
 
 
 -- | Attempts to download remote OXR daily rates and write it into a file.
-downloadDailyRates
+doDownloadDailyRates
   :: (MonadError String m, MonadIO m)
   => String   -- ^ OXR API key
   -> Day      -- ^ Date of historical rates
   -> Currency -- ^ Base currency
   -> FilePath -- ^ Output file path
   -> m ()
-downloadDailyRates apikey date base path = do
+doDownloadDailyRates apikey date base path = do
   dailyrates <- retrieveDailyRates apikey date base
   writeDailyRates dailyrates path
