@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ac2e89f4350ddae690ba7f5d91fc9d7d06438a261a731488f32e4ee40c073906
+-- hash: c210b6e9bc2860bd092e3d6c5bd4edd72501d41ebbe36d342d3bd5519dfda66d
 
 name:           defx
 version:        0.0.2.0
@@ -27,15 +27,22 @@ source-repository head
 
 library
   exposed-modules:
-      Defx.Commons
-      Defx.Providers.Oxr.Programs
-      Defx.Providers.Oxr.Retrieve
-      Defx.Providers.Oxr.Types
-      Defx.Types.DailyRates
+      Defx.IO
+      Defx.Programs.HistoricalRates
+      Defx.Providers.Oxr
+      Defx.Types
   other-modules:
       Paths_defx
   hs-source-dirs:
       src
+  default-extensions:
+      ConstraintKinds
+      DeriveGeneric
+      FlexibleContexts
+      GeneralizedNewtypeDeriving
+      ScopedTypeVariables
+      TupleSections
+      OverloadedStrings
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -43,6 +50,7 @@ library
     , http-client
     , http-conduit
     , http-types
+    , mtl
     , scientific
     , text
     , time
@@ -64,6 +72,7 @@ executable defx-exe
     , http-client
     , http-conduit
     , http-types
+    , mtl
     , optparse-applicative
     , scientific
     , text
@@ -88,6 +97,7 @@ test-suite defx-doctest
     , http-client
     , http-conduit
     , http-types
+    , mtl
     , scientific
     , text
     , time
@@ -110,6 +120,7 @@ test-suite defx-test
     , http-client
     , http-conduit
     , http-types
+    , mtl
     , scientific
     , text
     , time

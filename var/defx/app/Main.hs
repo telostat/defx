@@ -1,59 +1,48 @@
 module Main where
 
-import Data.Text                   as T
-import Data.Time                   (Day)
-import Data.Version                (showVersion)
-import Defx.Commons                (Currency)
-import Defx.Providers.Oxr.Programs (oxrDownloadHistoricalRates)
-import Options.Applicative
-       ( Parser
-       , ParserInfo
-       , command
-       , execParser
-       , fullDesc
-       , header
-       , help
-       , helper
-       , hsubparser
-       , info
-       , infoOption
-       , long
-       , metavar
-       , option
-       , progDesc
-       , showDefault
-       , strOption
-       , value
-       )
-import Paths_defx                  (version)
-import System.IO                   (stdout)
+import           Control.Monad.Except          (runExceptT)
+import qualified Data.Text                     as T
+import           Data.Time                     (Day)
+import           Data.Version                  (showVersion)
+import           Defx.Programs.HistoricalRates (downloadDailyRates)
+import           Defx.Types                    (Currency)
+import qualified Options.Applicative           as OA
+import           Paths_defx                    (version)
+import           System.Exit                   (die, exitSuccess)
+import           System.IO                     (hPutStrLn, stderr)
+
 
 -- | Main entry-point of the application.
 main :: IO ()
-main = cliProgram =<< execParser cliProgramParserInfo
+main = cliProgram =<< OA.execParser cliProgramParserInfo
 
 
 -- | Runs the CLI program.
 cliProgram :: CliArguments -> IO ()
-cliProgram (CliArguments (OxrDownloadHistorical apikey date base)) = oxrDownloadHistoricalRates apikey date base stdout
+cliProgram (CliArguments (OxrDownloadHistorical apikey date base path)) = do
+  result <- runExceptT (downloadDailyRates apikey date base path)
+  case result of
+    Left err -> hPutStrLn stderr err >> die "Exiting..."
+    Right () -> exitSuccess
 
 
 -- | Registry of commands.
 data Command =
-    OxrDownloadHistorical !String !Day !Currency
+    OxrDownloadHistorical !String !Day !Currency !FilePath
   deriving Show
 
 
 -- | Parses program arguments.
-parserProgramOptions :: Parser CliArguments
-parserProgramOptions = CliArguments <$> hsubparser
-  ( command "oxr-historical" (info
+parserProgramOptions :: OA.Parser CliArguments
+parserProgramOptions = CliArguments <$> OA.hsubparser
+  ( OA.command "oxr-historical" (OA.info
       (OxrDownloadHistorical
-        <$> strOption (long "apikey" <> metavar "API-KEY" <> help "API key")
-        <*> (read <$> strOption (long "date" <> metavar "DATE" <> help "Date to download rates for"))
-        <*> (T.pack <$> strOption (long "base" <> metavar "BASE-CCY" <> value "USD" <> showDefault <> help "Base currency"))
+        <$> OA.strOption (OA.long "api-key" <> OA.metavar "API-KEY" <> OA.help "OXR API key")
+        <*> (read <$> OA.strOption (OA.long "date" <> OA.metavar "DATE" <> OA.help "Date to download rates for"))
+        <*> (T.pack <$> OA.strOption (OA.long "base" <> OA.metavar "BASE-CCY" <> OA.value "USD" <> OA.showDefault <> OA.help "Base currency"))
+        <*> OA.strOption (OA.long "output" <> OA.metavar "OUTPUT" <> OA.help "Output file path")
       )
-      (progDesc "Download historical FX rates for a date from OXR")
+      (OA.progDesc "Download historical FX rates from OXR for a given date")
     )
   )
 
@@ -63,12 +52,12 @@ newtype CliArguments = CliArguments { cliArgumentsCommand :: Command } deriving 
 
 
 -- | Version option parser.
-parserVersionOption :: Parser (a -> a)
-parserVersionOption = infoOption (showVersion version) (long "version" <> help "Show version")
+parserVersionOption :: OA.Parser (a -> a)
+parserVersionOption = OA.infoOption (showVersion version) (OA.long "version" <> OA.help "Show version")
 
 
 -- | Program parser information.
-cliProgramParserInfo :: ParserInfo CliArguments
-cliProgramParserInfo = info
-  (helper <*> parserVersionOption <*> parserProgramOptions)
-  (fullDesc <> progDesc "DEFX Program" <> header "defx")
+cliProgramParserInfo :: OA.ParserInfo CliArguments
+cliProgramParserInfo = OA.info
+  (OA.helper <*> parserVersionOption <*> parserProgramOptions)
+  (OA.fullDesc <> OA.progDesc "DEFX Program" <> OA.header "defx")
