@@ -2,9 +2,9 @@ module Defx.Providers.Oxr where
 
 import           Control.Monad.Except       (MonadError(throwError))
 import           Control.Monad.IO.Class     (MonadIO)
-import           Data.Aeson                 ((.:))
+import           Data.Aeson                 ((.!=), (.:!), (.:), (.:?))
 import qualified Data.Aeson                 as Aeson
-import           Data.Aeson.Types           ((.:?))
+import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy       as BL
 import qualified Data.ByteString.Lazy.Char8 as BLC
@@ -16,6 +16,18 @@ import           Data.Time.Clock.POSIX      (posixSecondsToUTCTime)
 import           Defx.Types                 (Currency, DailyRates(DailyRates), Rates)
 import qualified Network.HTTP.Simple        as NHS
 import           Text.Printf                (printf)
+
+
+data OxrConfig = OxrConfig
+  { oxrConfigApiKey   :: !B.ByteString
+  , oxrConfigCurrency :: !Currency
+  } deriving Show
+
+
+instance Aeson.FromJSON OxrConfig where
+  parseJSON = Aeson.withObject "OxrConfig" $ \o -> OxrConfig
+    <$> (TE.encodeUtf8 <$> o .: "apikey")
+    <*> o .:? "base" .!= "USD"
 
 
 -- | Type encoding for latest/historical OXR endpoint response value.

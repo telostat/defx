@@ -1,0 +1,12 @@
+description: >
+  This is a configuration template for DEFX programs.
+
+  You can use it to derive your own configurations.
+profiles:
+  example-oxr:
+    ## Provider is case-insensitive. However, examples in this file use the canonical provider names.
+    provider: oxr
+    ## Api Keys refer to the App IDs as described on https://docs.openexchangerates.org/docs/authentication
+    apikey: <CHANGE-ME>
+    ## Base currency defaults to "USD" if not provided.
+    currency: USD

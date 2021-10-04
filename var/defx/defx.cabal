@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 556c8860f4aab1b3708a6f697034d4088d417b394ea732cce58e873f5f26419a
+-- hash: 3d99c2fac6ea4a746a6adae1234b09b75a6cf8a1be0c2d14c21a32c6310c244b
 
 name:           defx
 version:        0.0.2.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Defx.Config
       Defx.IO
       Defx.Programs.ComputeCrosses
       Defx.Programs.HistoricalRates
@@ -52,11 +53,14 @@ library
     , http-conduit
     , http-types
     , mtl
+    , path
+    , path-io
     , safe-decimal
     , scientific
     , text
     , time
     , unordered-containers
+    , yaml
   default-language: Haskell2010
 
 executable defx-exe
@@ -76,11 +80,14 @@ executable defx-exe
     , http-types
     , mtl
     , optparse-applicative
+    , path
+    , path-io
     , safe-decimal
     , scientific
     , text
     , time
     , unordered-containers
+    , yaml
   default-language: Haskell2010
 
 test-suite defx-doctest
@@ -101,11 +108,14 @@ test-suite defx-doctest
     , http-conduit
     , http-types
     , mtl
+    , path
+    , path-io
     , safe-decimal
     , scientific
     , text
     , time
     , unordered-containers
+    , yaml
   default-language: Haskell2010
 
 test-suite defx-test
@@ -125,9 +135,12 @@ test-suite defx-test
     , http-conduit
     , http-types
     , mtl
+    , path
+    , path-io
     , safe-decimal
     , scientific
     , text
     , time
     , unordered-containers
+    , yaml
   default-language: Haskell2010

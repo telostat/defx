@@ -20,11 +20,14 @@ dependencies:
 - http-conduit
 - http-types
 - mtl
+- path
+- path-io
 - safe-decimal
 - scientific
 - text
 - time
 - unordered-containers
+- yaml
 
 library:
   source-dirs: src
