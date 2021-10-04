@@ -129,7 +129,7 @@ data DailyRates = DailyRates
 
 -- | 'Aeson.FromJSON' instance for 'DailyRates'.
 --
--- >>> Aeson.eitherDecode "{\"date\": \"2001-12-31\", \"time\": 1009843199, \"base\": \"USD\", \"rates\": {}}" :: Either String DailyRates
+-- >>> Aeson.eitherDecode "{\"date\": \"2001-12-31\", \"timestamp\": 1009843199, \"base\": \"USD\", \"rates\": {}}" :: Either String DailyRates
 -- Right (DailyRates {dailyRatesDate = 2001-12-31, dailyRatesBase = "USD", dailyRatesRates = fromList [], dailyRatesProvider = Nothing, dailyRatesTimestamp = Just 2001-12-31 23:59:59 UTC})
 instance Aeson.FromJSON DailyRates where
   parseJSON = Aeson.withObject "DailyRates" $ \o -> DailyRates
@@ -143,7 +143,7 @@ instance Aeson.FromJSON DailyRates where
 -- | 'Aeson.ToJSON' instance for 'DailyRates'
 --
 -- >>> Aeson.encode $ DailyRates {dailyRatesDate = read "2001-12-31", dailyRatesTimestamp = Just (read "2001-12-31 23:59:59 UTC"), dailyRatesBase = "USD", dailyRatesRates = HM.fromList [], dailyRatesProvider = Nothing}
--- "{\"base\":\"USD\",\"time\":1009843199,\"rates\":{},\"date\":\"2001-12-31\",\"provider\":null}"
+-- "{\"base\":\"USD\",\"rates\":{},\"date\":\"2001-12-31\",\"timestamp\":1009843199,\"provider\":null}"
 instance Aeson.ToJSON DailyRates where
   toJSON x = Aeson.object
     [ "date" .= dailyRatesDate x

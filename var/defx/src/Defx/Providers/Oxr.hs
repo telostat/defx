@@ -21,7 +21,7 @@ import           Text.Printf                (printf)
 -- | Type encoding for latest/historical OXR endpoint response value.
 --
 -- >>> Aeson.decode "{\"disclaimer\":\"A\",\"license\":\"B\",\"timestamp\":1,\"base\":\"USD\",\"rates\":{\"AED\":3.672538,\"AFN\":66.809999}}" :: Maybe OxrResponseValue
--- Just (OxrResponseValue {oxrResponseValueDisclaimer = "A", oxrResponseValueLicense = "B", oxrResponseValueTimestamp = 1970-01-01 00:00:01 UTC, oxrResponseValueBase = "USD", oxrResponseValueRates = fromList [("AED",3.672538),("AFN",66.809999)]})
+-- Just (OxrResponseValue {oxrResponseValueDisclaimer = "A", oxrResponseValueLicense = "B", oxrResponseValueTimestamp = 1970-01-01 00:00:01 UTC, oxrResponseValueBase = "USD", oxrResponseValueRates = fromList [("AED",MkValue {unValue = 3.67253800}),("AFN",MkValue {unValue = 66.80999900})]})
 data OxrResponseValue = OxrResponseValue
   { oxrResponseValueDisclaimer :: !T.Text   -- ^ Disclaimer text
   , oxrResponseValueLicense    :: !T.Text   -- ^ License text
