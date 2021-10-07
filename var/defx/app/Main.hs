@@ -5,7 +5,7 @@ import qualified Data.Text                         as T
 import           Data.Time                         (Day)
 import           Data.Version                      (showVersion)
 import           Defx.Programs.ComputeDailyCrosses (doComputeDailyCrosses)
-import           Defx.Programs.DownloadDailyRates  (doDownloadDailyRates)
+import           Defx.Programs.DownloadDailyRates  (doDownloadDailyRates, doDownloadDailyRatesRange)
 import           Defx.Types                        (Currency)
 import qualified Options.Applicative               as OA
 import qualified Path                              as P
@@ -23,6 +23,8 @@ main = cliProgram =<< OA.execParser cliProgramParserInfo
 cliProgram :: CliArguments -> IO ()
 cliProgram (CliArguments (DownloadDailyRates config profile date)) =
   doRun (doDownloadDailyRates config profile date)
+cliProgram (CliArguments (DownloadDailyRatesRange config profile since until)) =
+  doRun (doDownloadDailyRatesRange config profile since until)
 cliProgram (CliArguments (ComputeDailyCrosses config profile date)) =
   doRun (doComputeDailyCrosses config profile date)
 
@@ -30,6 +32,7 @@ cliProgram (CliArguments (ComputeDailyCrosses config profile date)) =
 -- | Registry of commands.
 data Command =
     DownloadDailyRates !FilePath !T.Text !Day
+  | DownloadDailyRatesRange !FilePath !T.Text !Day !Day
   | ComputeDailyCrosses  !FilePath !T.Text !Day
   deriving Show
 
@@ -44,6 +47,15 @@ parserProgramOptions = CliArguments <$> OA.hsubparser
         <*> (read <$> OA.strOption (OA.long "date" <> OA.metavar "DATE" <> OA.help "Date to download rates for"))
       )
       (OA.progDesc "Download daily FX rates for a given date")
+    )
+  <> OA.command "get-daily-range" (OA.info
+      (DownloadDailyRatesRange
+        <$> OA.strOption (OA.long "config" <> OA.metavar "CONFIG-FILE" <> OA.help "Path to configuration file")
+        <*> OA.strOption (OA.long "profile" <> OA.metavar "PROFILE-NAME" <> OA.help "Name of the configuration profile")
+        <*> (read <$> OA.strOption (OA.long "since" <> OA.metavar "SINCE-DATE" <> OA.help "Date to download rates since (inclusive)"))
+        <*> (read <$> OA.strOption (OA.long "until" <> OA.metavar "UNTIL-DATE" <> OA.help "Date to download rates until (inclusive)"))
+      )
+      (OA.progDesc "Download daily FX rates for a given date range")
     )
   <> OA.command "compute-daily-crosses" (OA.info
       (ComputeDailyCrosses

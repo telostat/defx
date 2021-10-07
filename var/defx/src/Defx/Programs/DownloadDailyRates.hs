@@ -17,7 +17,7 @@ import           Defx.Types             (DailyRates)
 import qualified Path                   as P
 
 
--- | Attempts to download remote OXR daily rates and write it into a file.
+-- | Attempts to download remote daily rates for a given date and write it into a file.
 doDownloadDailyRates
   :: (MonadError String m, MonadIO m)
   => FilePath  -- ^ Path to the configuration file
@@ -28,6 +28,20 @@ doDownloadDailyRates config pname date = do
   configPath <- toAbsFilePath True config
   (_config, profile) <- readConfigFileWithProfile configPath pname
   downloadDailyRates profile date
+
+
+-- | Attempts to download remote daily rates for a given date range and write it into a file.
+doDownloadDailyRatesRange
+  :: (MonadError String m, MonadIO m)
+  => FilePath  -- ^ Path to the configuration file
+  -> T.Text    -- ^ Profile name
+  -> Day       -- ^ Date of historical rates to download since (inclusive)
+  -> Day       -- ^ Date of historical rates to download until (inclusive)
+  -> m ()
+doDownloadDailyRatesRange config pname dateSince dateUntil = do
+  configPath <- toAbsFilePath True config
+  (_config, profile) <- readConfigFileWithProfile configPath pname
+  mapM_ (downloadDailyRates profile) [dateSince..dateUntil]
 
 
 -- | Attempts to download daily rates for the given date for a given profile.
