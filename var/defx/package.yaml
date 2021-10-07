@@ -27,6 +27,7 @@ dependencies:
 - text
 - time
 - unordered-containers
+- vector
 - yaml
 
 library:

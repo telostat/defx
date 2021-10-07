@@ -4,7 +4,7 @@ import           Control.Monad.Except              (ExceptT, runExceptT)
 import qualified Data.Text                         as T
 import           Data.Time                         (Day)
 import           Data.Version                      (showVersion)
-import           Defx.Programs.ComputeDailyCrosses (doComputeDailyCrosses)
+import           Defx.Programs.ComputeDailyCrosses (doComputeDailyCrosses, doComputeDailyCrossesRange)
 import           Defx.Programs.DownloadDailyRates  (doDownloadDailyRates, doDownloadDailyRatesRange)
 import           Defx.Types                        (Currency)
 import qualified Options.Applicative               as OA
@@ -27,6 +27,8 @@ cliProgram (CliArguments (DownloadDailyRatesRange config profile since until)) =
   doRun (doDownloadDailyRatesRange config profile since until)
 cliProgram (CliArguments (ComputeDailyCrosses config profile date)) =
   doRun (doComputeDailyCrosses config profile date)
+cliProgram (CliArguments (ComputeDailyCrossesRange config profile since until)) =
+  doRun (doComputeDailyCrossesRange config profile since until)
 
 
 -- | Registry of commands.
@@ -34,6 +36,7 @@ data Command =
     DownloadDailyRates !FilePath !T.Text !Day
   | DownloadDailyRatesRange !FilePath !T.Text !Day !Day
   | ComputeDailyCrosses  !FilePath !T.Text !Day
+  | ComputeDailyCrossesRange  !FilePath !T.Text !Day !Day
   deriving Show
 
 
@@ -62,6 +65,15 @@ parserProgramOptions = CliArguments <$> OA.hsubparser
         <$> OA.strOption (OA.long "config" <> OA.metavar "CONFIG-FILE" <> OA.help "Path to configuration file")
         <*> OA.strOption (OA.long "profile" <> OA.metavar "PROFILE-NAME" <> OA.help "Name of the configuration profile")
         <*> (read <$> OA.strOption (OA.long "date" <> OA.metavar "DATE" <> OA.help "Date to compute crosses for"))
+      )
+      (OA.progDesc "Computes daily FX rates for a given date")
+    )
+  <> OA.command "compute-daily-crosses-range" (OA.info
+      (ComputeDailyCrossesRange
+        <$> OA.strOption (OA.long "config" <> OA.metavar "CONFIG-FILE" <> OA.help "Path to configuration file")
+        <*> OA.strOption (OA.long "profile" <> OA.metavar "PROFILE-NAME" <> OA.help "Name of the configuration profile")
+        <*> (read <$> OA.strOption (OA.long "since" <> OA.metavar "SINCE-DATE" <> OA.help "Date to compute crosses since (inclusive)"))
+        <*> (read <$> OA.strOption (OA.long "until" <> OA.metavar "UNTIL-DATE" <> OA.help "Date to compute crosses until (inclusive)"))
       )
       (OA.progDesc "Computes daily FX rates for a given date")
     )
