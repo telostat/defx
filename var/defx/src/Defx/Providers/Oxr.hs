@@ -2,18 +2,16 @@ module Defx.Providers.Oxr where
 
 import           Control.Monad.Except       (MonadError(throwError))
 import           Control.Monad.IO.Class     (MonadIO)
-import           Data.Aeson                 ((.!=), (.:!), (.:), (.:?))
+import           Data.Aeson                 ((.!=), (.:), (.:?))
 import qualified Data.Aeson                 as Aeson
 import qualified Data.ByteString            as B
-import qualified Data.ByteString.Char8      as BC
-import qualified Data.ByteString.Lazy       as BL
 import qualified Data.ByteString.Lazy.Char8 as BLC
 import qualified Data.Text                  as T
 import qualified Data.Text.Encoding         as TE
 import           Data.Time                  (Day)
 import           Data.Time.Clock            (UTCTime)
 import           Data.Time.Clock.POSIX      (posixSecondsToUTCTime)
-import           Defx.Types                 (Currency, DailyRates(DailyRates), Rates)
+import           Defx.Types                 (Currency, DailyRates(..), Rates)
 import qualified Network.HTTP.Simple        as NHS
 import           Text.Printf                (printf)
 
@@ -55,11 +53,10 @@ instance Aeson.FromJSON OxrResponseValue where
 -- | Attempts to retrieve daily rates from remote OXR API endpoint.
 retrieveOxrDailyRates
   :: (MonadError String m, MonadIO m)
-  => String   -- ^ OXR API key
-  -> Day      -- ^ Date of historical rates
-  -> Currency -- ^ Base currency
+  => OxrConfig -- ^ OXR provider configuration
+  -> Day       -- ^ Date of historical rates
   -> m OxrResponseValue
-retrieveOxrDailyRates apikey date base = do
+retrieveOxrDailyRates (OxrConfig apikey base) date = do
   response <- NHS.httpLBS (addParams request)
   case NHS.getResponseStatusCode response of
     200 -> case Aeson.eitherDecode (NHS.getResponseBody response) of
@@ -68,17 +65,21 @@ retrieveOxrDailyRates apikey date base = do
     err -> throwError ("Cannot retrieve remote data. Error code was: " <> show err <> ". Error was: " <> BLC.unpack (NHS.getResponseBody response))
   where
     request = NHS.parseRequest_ (printf "https://openexchangerates.org/api/historical/%s.json" (show date))
-    addParams = NHS.setRequestQueryString [("base", Just $ TE.encodeUtf8 base), ("app_id", Just $ BC.pack apikey)]
+    addParams = NHS.setRequestQueryString [("base", Just $ TE.encodeUtf8 base), ("app_id", Just apikey)]
 
 
 -- | Attempts to retrieve daily rates from remote OXR API endpoint and return as
 -- standard 'DailyRates' value.
 retrieveDailyRates
   :: (MonadError String m, MonadIO m)
-  => String   -- ^ OXR API key
-  -> Day      -- ^ Date of historical rates
-  -> Currency -- ^ Base currency
+  => OxrConfig -- ^ OXR provider configuration
+  -> Day       -- ^ Date of historical rates
   -> m DailyRates
-retrieveDailyRates apikey date base = do
-  oxrvalue <- retrieveOxrDailyRates apikey date base
-  pure $ DailyRates date base (oxrResponseValueRates oxrvalue) (Just "OXR") (Just (oxrResponseValueTimestamp oxrvalue))
+retrieveDailyRates config date = do
+  oxrvalue <- retrieveOxrDailyRates config date
+  pure $ DailyRates
+    { dailyRatesTime = oxrResponseValueTimestamp oxrvalue
+    , dailyRatesBase =  oxrResponseValueBase oxrvalue
+    , dailyRatesRates = oxrResponseValueRates oxrvalue
+    , dailyRatesProvider = "OXR"
+    }

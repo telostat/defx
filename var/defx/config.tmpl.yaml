@@ -3,10 +3,15 @@ description: >
 
   You can use it to derive your own configurations.
 profiles:
-  example-oxr:
+  - ## Unique name of the profile:
+    name: example
+    ## Provider directory:
+    directory: "/data/defx/oxr"
+    ## Base currency defaults to "USD" if not provided.
+    currency: USD
+    ## A non-empty list of currencies of interest.
+    currencies: ["USD", "CHF", "EUR"]
     ## Provider is case-insensitive. However, examples in this file use the canonical provider names.
     provider: oxr
     ## Api Keys refer to the App IDs as described on https://docs.openexchangerates.org/docs/authentication
     apikey: <CHANGE-ME>
-    ## Base currency defaults to "USD" if not provided.
-    currency: USD

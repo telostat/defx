@@ -1,16 +1,17 @@
 module Main where
 
-import           Control.Monad.Except          (runExceptT)
-import qualified Data.Text                     as T
-import           Data.Time                     (Day)
-import           Data.Version                  (showVersion)
-import           Defx.Programs.ComputeCrosses  (doComputeCrosses)
-import           Defx.Programs.HistoricalRates (doDownloadDailyRates)
-import           Defx.Types                    (Currency)
-import qualified Options.Applicative           as OA
-import           Paths_defx                    (version)
-import           System.Exit                   (die, exitSuccess)
-import           System.IO                     (hPutStrLn, stderr)
+import           Control.Monad.Except              (ExceptT, runExceptT)
+import qualified Data.Text                         as T
+import           Data.Time                         (Day)
+import           Data.Version                      (showVersion)
+import           Defx.Programs.ComputeDailyCrosses (doComputeDailyCrosses)
+import           Defx.Programs.DownloadDailyRates  (doDownloadDailyRates)
+import           Defx.Types                        (Currency)
+import qualified Options.Applicative               as OA
+import qualified Path                              as P
+import           Paths_defx                        (version)
+import           System.Exit                       (die, exitSuccess)
+import           System.IO                         (hPutStrLn, stderr)
 
 
 -- | Main entry-point of the application.
@@ -20,44 +21,37 @@ main = cliProgram =<< OA.execParser cliProgramParserInfo
 
 -- | Runs the CLI program.
 cliProgram :: CliArguments -> IO ()
-cliProgram (CliArguments (OxrDownloadHistorical apikey date base path)) = do
-  result <- runExceptT (doDownloadDailyRates apikey date base path)
-  case result of
-    Left err -> hPutStrLn stderr err >> die "Exiting..."
-    Right () -> exitSuccess
-cliProgram (CliArguments (ComputeCrosses currencies inpath outpath)) = do
-  result <- runExceptT (doComputeCrosses currencies inpath outpath)
-  case result of
-    Left err -> hPutStrLn stderr err >> die "Exiting..."
-    Right () -> exitSuccess
+cliProgram (CliArguments (DownloadDailyRates config profile date)) =
+  doRun (doDownloadDailyRates config profile date)
+cliProgram (CliArguments (ComputeDailyCrosses config profile date)) =
+  doRun (doComputeDailyCrosses config profile date)
 
 
 -- | Registry of commands.
 data Command =
-    OxrDownloadHistorical !String !Day !Currency !FilePath
-  | ComputeCrosses ![Currency] !FilePath !FilePath
+    DownloadDailyRates !FilePath !T.Text !Day
+  | ComputeDailyCrosses  !FilePath !T.Text !Day
   deriving Show
 
 
 -- | Parses program arguments.
 parserProgramOptions :: OA.Parser CliArguments
 parserProgramOptions = CliArguments <$> OA.hsubparser
-  ( OA.command "oxr-historical" (OA.info
-      (OxrDownloadHistorical
-        <$> OA.strOption (OA.long "api-key" <> OA.metavar "API-KEY" <> OA.help "OXR API key")
+  ( OA.command "get-daily" (OA.info
+      (DownloadDailyRates
+        <$> OA.strOption (OA.long "config" <> OA.metavar "CONFIG-FILE" <> OA.help "Path to configuration file")
+        <*> OA.strOption (OA.long "profile" <> OA.metavar "PROFILE-NAME" <> OA.help "Name of the configuration profile")
         <*> (read <$> OA.strOption (OA.long "date" <> OA.metavar "DATE" <> OA.help "Date to download rates for"))
-        <*> (T.pack <$> OA.strOption (OA.long "base" <> OA.metavar "BASE-CCY" <> OA.value "USD" <> OA.showDefault <> OA.help "Base currency"))
-        <*> OA.strOption (OA.long "output" <> OA.metavar "OUTPUT" <> OA.help "Output file path")
       )
-      (OA.progDesc "Download historical FX rates from OXR for a given date")
+      (OA.progDesc "Download daily FX rates for a given date")
     )
-  <> OA.command "compute-crosses" (OA.info
-      (ComputeCrosses
-        <$> (T.words <$> OA.strOption (OA.long "currencies" <> OA.metavar "CURRENCIES" <> OA.help "Currencies"))
-        <*> OA.strOption (OA.long "input" <> OA.metavar "INPUT" <> OA.help "Input file path")
-        <*> OA.strOption (OA.long "output" <> OA.metavar "OUTPUT" <> OA.help "Output file path")
+  <> OA.command "compute-daily-crosses" (OA.info
+      (ComputeDailyCrosses
+        <$> OA.strOption (OA.long "config" <> OA.metavar "CONFIG-FILE" <> OA.help "Path to configuration file")
+        <*> OA.strOption (OA.long "profile" <> OA.metavar "PROFILE-NAME" <> OA.help "Name of the configuration profile")
+        <*> (read <$> OA.strOption (OA.long "date" <> OA.metavar "DATE" <> OA.help "Date to compute crosses for"))
       )
-      (OA.progDesc "Computes crosses")
+      (OA.progDesc "Computes daily FX rates for a given date")
     )
   )
 
@@ -76,3 +70,13 @@ cliProgramParserInfo :: OA.ParserInfo CliArguments
 cliProgramParserInfo = OA.info
   (OA.helper <*> parserVersionOption <*> parserProgramOptions)
   (OA.fullDesc <> OA.progDesc "DEFX Program" <> OA.header "defx")
+
+
+-- * Helpers
+-- &helpers
+
+-- | Helper to run DEFX command line programs.
+doRun :: ExceptT String IO () -> IO ()
+doRun action = either onError (const exitSuccess) =<< runExceptT action
+  where
+    onError err = hPutStrLn stderr err >> die "Exiting..."

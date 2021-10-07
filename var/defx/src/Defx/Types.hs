@@ -2,15 +2,14 @@
 
 module Defx.Types where
 
-import           Data.Aeson            ((.:), (.:?), (.=))
-import qualified Data.Aeson            as Aeson
-import qualified Data.HashMap.Strict   as HM
-import           Data.Maybe            (fromJust)
-import           Data.Scientific       (FPFormat(Fixed), Scientific, formatScientific)
-import qualified Data.Text             as T
-import           Data.Time             (Day, UTCTime)
-import           Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
-import           Numeric.Decimal       (Decimal, RoundHalfUp, fromScientificDecimal)
+import           Data.Aeson          ((.:), (.=))
+import qualified Data.Aeson          as Aeson
+import qualified Data.HashMap.Strict as HM
+import           Data.Maybe          (fromJust)
+import           Data.Scientific     (FPFormat(Fixed), Scientific, formatScientific)
+import qualified Data.Text           as T
+import           Data.Time           (UTCTime)
+import           Numeric.Decimal     (Decimal, RoundHalfUp, fromScientificDecimal, toScientificDecimal)
 
 
 -- | Type encoding for currency codes.
@@ -21,33 +20,30 @@ type Currency = T.Text
 type Pair = (Currency, Currency)
 
 
--- | Type encoding of a foreign exchange rate observation.
+-- | Type encoding of a foreign exchange rate observation for an arbitraty date or date/time.
 data FXRate = FXRate
-  { fxRateDate :: !Day
-  , fxRatePair :: !Pair
+  { fxRatePair :: !Pair
   , fxRateRate :: !Value
   } deriving (Eq, Ord, Show)
 
 
 -- | 'Aeson.FromJSON' instance for 'FXRate'.
 --
--- >>> Aeson.decode "{\"date\": \"2021-01-01\", \"ccy1\": \"EUR\", \"ccy2\": \"USD\", \"rate\": 1.123456789}" :: Maybe FXRate
--- Just (FXRate {fxRateDate = 2021-01-01, fxRatePair = ("EUR","USD"), fxRateRate = MkValue {unValue = 1.12345679}})
+-- >>> Aeson.decode "{\"ccy1\": \"EUR\", \"ccy2\": \"USD\", \"rate\": 1.123456789}" :: Maybe FXRate
+-- Just (FXRate {fxRatePair = ("EUR","USD"), fxRateRate = MkValue {unValue = 1.12345679}})
 instance Aeson.FromJSON FXRate where
   parseJSON = Aeson.withObject "FXRate" $ \o -> FXRate
-    <$> o .: "date"
-    <*> ((,) <$> o .: "ccy1" <*> o .: "ccy2")
+    <$> ((,) <$> o .: "ccy1" <*> o .: "ccy2")
     <*> o .: "rate"
 
 
 -- | 'Aeson.ToJSON' instance for 'FXRate'.
 --
--- >>> Aeson.encode (FXRate {fxRateDate = read "2021-01-01", fxRatePair = ("EUR", "USD"), fxRateRate = mkValueLossy 1.123456789})
--- "{\"ccy2\":\"USD\",\"date\":\"2021-01-01\",\"rate\":\"1.12345679\",\"ccy1\":\"EUR\"}"
+-- >>> Aeson.encode (FXRate {fxRatePair = ("EUR", "USD"), fxRateRate = mkValueLossy 1.123456789})
+-- "{\"ccy2\":\"USD\",\"rate\":\"1.12345679\",\"ccy1\":\"EUR\"}"
 instance Aeson.ToJSON FXRate where
   toJSON x = Aeson.object
-    [ "date" .= fxRateDate x
-    , "ccy1" .= fst (fxRatePair x)
+    [ "ccy1" .= fst (fxRatePair x)
     , "ccy2" .= snd (fxRatePair x)
     , "rate" .= fxRateRate x
     ]
@@ -72,9 +68,9 @@ instance Aeson.FromJSON Value where
 -- | 'Aeson.ToJSON' instance for 'Value'.
 --
 -- >>> Aeson.encode (mkValueLossy 1.12345678)
--- "\"1.12345678\""
+-- "1.12345678"
 instance Aeson.ToJSON Value where
-  toJSON = Aeson.String . T.pack . show . unValue
+  toJSON = Aeson.Number . toScientificDecimal . unValue
 
 
 -- | Smart constructor for 'Value' type from 'Scientic' values.
@@ -119,36 +115,33 @@ type Rates = HM.HashMap Currency Value
 
 -- | Type encoding for daily rates for a given base
 data DailyRates = DailyRates
-  { dailyRatesDate      :: !Day              -- ^ Date of the rates.
-  , dailyRatesBase      :: !Currency         -- ^ Base currency.
-  , dailyRatesRates     :: !Rates            -- ^ A collection of rates.
-  , dailyRatesProvider  :: !(Maybe T.Text)     -- ^ Provider identifier, if any.
-  , dailyRatesTimestamp :: !(Maybe UTCTime)  -- ^ Time the rates have been published, if any.
+  { dailyRatesTime     :: !UTCTime   -- ^ Effective date/time of the FX rates.
+  , dailyRatesBase     :: !Currency  -- ^ Base currency.
+  , dailyRatesRates    :: !Rates     -- ^ A collection of rates.
+  , dailyRatesProvider :: !T.Text    -- ^ Provider identifier, if any.
   } deriving (Eq, Ord, Show)
 
 
 -- | 'Aeson.FromJSON' instance for 'DailyRates'.
 --
--- >>> Aeson.eitherDecode "{\"date\": \"2001-12-31\", \"timestamp\": 1009843199, \"base\": \"USD\", \"rates\": {}}" :: Either String DailyRates
--- Right (DailyRates {dailyRatesDate = 2001-12-31, dailyRatesBase = "USD", dailyRatesRates = fromList [], dailyRatesProvider = Nothing, dailyRatesTimestamp = Just 2001-12-31 23:59:59 UTC})
+-- >>> Aeson.eitherDecode "{\"time\": \"2001-12-31 23:59:59Z\", \"base\": \"USD\", \"provider\": \"provider\", \"rates\": {}}" :: Either String DailyRates
+-- Right (DailyRates {dailyRatesTime = 2001-12-31 23:59:59 UTC, dailyRatesBase = "USD", dailyRatesRates = fromList [], dailyRatesProvider = "provider"})
 instance Aeson.FromJSON DailyRates where
   parseJSON = Aeson.withObject "DailyRates" $ \o -> DailyRates
-    <$> o .: "date"
+    <$> o .: "time"
     <*> o .: "base"
     <*> o .: "rates"
-    <*> o .:? "provider"
-    <*> (fmap (posixSecondsToUTCTime . fromInteger) <$> o .: "timestamp")
+    <*> o .: "provider"
 
 
 -- | 'Aeson.ToJSON' instance for 'DailyRates'
 --
--- >>> Aeson.encode $ DailyRates {dailyRatesDate = read "2001-12-31", dailyRatesTimestamp = Just (read "2001-12-31 23:59:59 UTC"), dailyRatesBase = "USD", dailyRatesRates = HM.fromList [], dailyRatesProvider = Nothing}
--- "{\"base\":\"USD\",\"rates\":{},\"date\":\"2001-12-31\",\"timestamp\":1009843199,\"provider\":null}"
+-- >>> Aeson.encode $ DailyRates {dailyRatesTime = read "2001-12-31 23:59:59Z", dailyRatesBase = "USD", dailyRatesRates = HM.fromList [], dailyRatesProvider = "provider"}
+-- "{\"base\":\"USD\",\"time\":\"2001-12-31T23:59:59Z\",\"rates\":{},\"provider\":\"provider\"}"
 instance Aeson.ToJSON DailyRates where
   toJSON x = Aeson.object
-    [ "date" .= dailyRatesDate x
+    [ "time" .= dailyRatesTime x
     , "base" .= dailyRatesBase x
     , "rates" .= dailyRatesRates x
     , "provider" .= dailyRatesProvider x
-    , "timestamp" .= (utcTimeToPOSIXSeconds <$> dailyRatesTimestamp x)
     ]
