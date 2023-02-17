@@ -47,7 +47,7 @@ from collections import OrderedDict
 
 
 #: Defines the library version.
-Version = "0.0.1"
+Version = "0.0.2.dev0"
 
 
 #: Defines the module logger.
